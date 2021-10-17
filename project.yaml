@@ -5,17 +5,13 @@ schema: ./schema.graphql
 dataSources:
   - name: main
     kind: substrate/Runtime
-    startBlock: 306697
+    startBlock: 0
     mapping:
       handlers:
         - handler: handleBlock
           kind: substrate/BlockHandler
         - handler: handleEvent
           kind: substrate/EventHandler
-          # filter:
-          #   method: RegisterVault
-        # - handler: handleCall
-        #   kind: substrate/CallHandler
 network:
   endpoint: wss://api.interlay.io/parachain
   # dictionary: https://api.subquery.network/sq/subquery/dictionary-polkadot

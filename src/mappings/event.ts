@@ -1,10 +1,12 @@
 import { SubstrateEvent } from "@subql/types";
 import {
   BTCAddress,
+  DepositCollateralEvent,
   Event,
   OracleExchangeRate,
   TokenIssueEvent,
   TokenRedeemEvent,
+  WithdrawCollateralEvent,
 } from "../types";
 import { ensureBlock } from "./block";
 import { ensureExtrinsic } from "./extrinsic";
@@ -15,7 +17,7 @@ import type {
   AccountId,
   BlockNumber,
 } from "@polkadot/types/interfaces/runtime";
-import type {
+import {
   OracleKey,
   UnsignedFixedPoint,
   BtcAddress,
@@ -23,6 +25,13 @@ import type {
   Collateral,
 } from "@interlay/interbtc-api";
 import { ensureVault } from "./vault";
+import BigNumber from "bignumber.js";
+
+export function decodeFixedPointType(x: UnsignedFixedPoint): BigNumber {
+  const xBig = new BigNumber(x.toString());
+  //const scalingFactor = new BigNumber(Math.pow(10, FIXEDI128_SCALING_FACTOR));
+  return xBig.shiftedBy(-18);
+}
 
 export async function ensureEvent(event: SubstrateEvent) {
   const block = await ensureBlock(event.block);
@@ -60,7 +69,10 @@ async function dispatch(type: string, evt: Event, rawEvent: SubstrateEvent) {
               const data = new OracleExchangeRate(evt.id);
               data.timestamp = evt.timestamp;
               data.key = key.value.toString();
-              data.value = value.toJSON();
+              data.origin = accountId.toHex();
+              const converted =
+                decodeFixedPointType(value).dp(4).toNumber() / 100;
+              data.value = converted.toString();
               await data.save();
             } else if (key.type === "FeeEstimation") {
               // TODO: write FeeEstimation as well
@@ -219,7 +231,36 @@ async function dispatch(type: string, evt: Event, rawEvent: SubstrateEvent) {
         // );
         vault.colateralAmount = totalCollateral.toBigInt();
 
+        const depositEvent = new DepositCollateralEvent(evt.id);
+        depositEvent.timestamp = evt.timestamp;
+        depositEvent.amount = newCollateral.toBigInt();
+        depositEvent.totalColateral = totalCollateral.toBigInt();
+        depositEvent.vaultId = vault.id;
         await vault.save();
+        await depositEvent.save();
+      }
+      break;
+
+    case "vaultRegistry/WithdrawCollateral":
+      {
+        const [accountId, withdrawnCollateral, totalCollateral] = rawEvent.event
+          .data as unknown as [AccountId, Collateral, Collateral];
+        const vault = await ensureVault(accountId);
+        vault.lastEventAt = evt.timestamp;
+        const oldValue = BigInt(vault.colateralAmount || 0);
+        //const expectedValue = oldValue + newCollateral.toBigInt();
+        // logger.log(
+        //   `DepositCollateral: ${totalCollateral.toBigInt()} == ${expectedValue} `
+        // );
+        vault.colateralAmount = totalCollateral.toBigInt();
+
+        const withdrawEvent = new WithdrawCollateralEvent(evt.id);
+        withdrawEvent.timestamp = evt.timestamp;
+        withdrawEvent.amount = withdrawnCollateral.toBigInt();
+        withdrawEvent.totalColateral = totalCollateral.toBigInt();
+        withdrawEvent.vaultId = vault.id;
+        await vault.save();
+        await withdrawEvent.save();
       }
       break;
   }

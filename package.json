@@ -25,6 +25,7 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
-    "@interlay/interbtc-api": "^1.2.0"
+    "@interlay/interbtc-api": "^1.2.0",
+    "bignumber.js": "^9.0.1"
   }
 }

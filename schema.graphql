@@ -81,6 +81,23 @@ type Vault @entity {
   bannedUntilBlock: BigInt
 }
 
+type DepositCollateralEvent @entity {
+  id: ID!
+  timestamp: Date!
+  vault: Vault!
+  amount: BigInt!
+  totalColateral: BigInt
+  freeCollateral: BigInt
+}
+
+type WithdrawCollateralEvent @entity {
+  id: ID!
+  timestamp: Date!
+  vault: Vault!
+  amount: BigInt!
+  totalColateral: BigInt
+}
+
 type TokenRedeemEvent @entity {
   id: ID!
   timestamp: Date!
