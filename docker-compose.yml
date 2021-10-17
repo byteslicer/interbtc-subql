@@ -6,7 +6,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - .data/postgres:/var/lib/postgresql/data
+      - postgres-storage:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: postgres
 
@@ -46,3 +46,18 @@ services:
       - --name=interbtc
       - --playground
       - --indexer=http://subquery-node:3000
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: always
+    ports:
+      - 8080:3000
+    environment:
+      - GF_DEFAULT_APP_MODE=development
+    volumes:
+      - grafana-storage:/var/lib/grafana
+volumes:
+  grafana-storage:
+    external: true
+  postgres-storage:
+    external: true
