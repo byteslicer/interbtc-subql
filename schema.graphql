@@ -1,0 +1,96 @@
+type KVData @jsonField {
+  key: String
+  value: String
+  type: String
+}
+
+type Block @entity {
+  id: ID!
+
+  number: BigInt
+  timestamp: Date
+  parentHash: String
+  specVersion: String
+  stateRoot: String
+  extrinsicRoot: String
+
+  extrinsics: [Extrinsic] @derivedFrom(field: "block")
+  events: [Event] @derivedFrom(field: "block")
+}
+
+type Event @entity {
+  id: ID!
+
+  index: Int
+  section: String
+  method: String
+  data: [KVData]
+
+  timestamp: Date
+  blockNumber: BigInt
+  block: Block
+  extrinsic: Extrinsic
+}
+
+type Extrinsic @entity {
+  id: ID!
+
+  method: String
+  section: String
+  args: [KVData]
+  nonce: BigInt
+  timestamp: Date
+  signature: String
+  tip: String
+  isSigned: Boolean
+  isSuccess: Boolean
+
+  block: Block
+  events: [Event] @derivedFrom(field: "extrinsic")
+}
+
+type OracleExchangeRate @entity {
+  id: ID!
+  timestamp: Date
+  origin: String
+  key: String
+  value: String
+}
+
+type BTCAddress @entity {
+  id: ID!
+  vault: Vault
+}
+
+type Vault @entity {
+  id: ID!
+  registerDate: Date
+  lastEventAt: Date
+  btcAddresses: [BTCAddress] @derivedFrom(field: "vault")
+  tokeRedeemEvents: [TokenRedeemEvent] @derivedFrom(field: "vault")
+  tokenIssueEvents: [TokenIssueEvent] @derivedFrom(field: "vault")
+  btcPublicKey: String
+  # colateralType: String
+  colateralAmount: BigInt
+  issuedTokens: BigInt
+  totalIssuedTokens: BigInt
+  totalRedeemedTokens: BigInt
+  toBeIssuedTokens: BigInt
+  toBeRedeemedTokens: BigInt
+  toBeReplacedTokens: BigInt
+  bannedUntilBlock: BigInt
+}
+
+type TokenRedeemEvent @entity {
+  id: ID!
+  timestamp: Date!
+  vault: Vault!
+  amount: BigInt!
+}
+
+type TokenIssueEvent @entity {
+  id: ID!
+  timestamp: Date!
+  vault: Vault!
+  amount: BigInt!
+}
